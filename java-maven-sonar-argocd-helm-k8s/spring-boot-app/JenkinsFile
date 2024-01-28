@@ -25,39 +25,45 @@ pipeline {
             }
         }
 
-        stage('SonarQube Analysis') {
-              steps {
-              script {
-                  def scannerHome = tool 'sonar-qube'
-                  withSonarQubeEnv('sonar-server') {
-                      dir('java-maven-sonar-argocd-helm-k8s/spring-boot-app') {
-                          // Run the SonarQube Scanner with project key and authentication token
-                          sh "mvn clean verify sonar:sonar -Dsonar.projectKey=SpringBoot-Java -Dsonar.login=sqp_5eaa6ac1d013dfd455ac05b54f09bd12f01cd0af"
-                      }
-                  }
-              }
-          }
-          
+      stage('SonarQube Analysis') {
+            steps {
+            script {
+                def scannerHome = tool 'sonar-qube'
+                withSonarQubeEnv('sonar-server') {
+                    dir('java-maven-sonar-argocd-helm-k8s/spring-boot-app') {
+                        // Run the SonarQube Scanner with project key and authentication token
+                        sh "mvn clean verify sonar:sonar -Dsonar.projectKey=SpringBoot-Java -Dsonar.login=sqp_5eaa6ac1d013dfd455ac05b54f09bd12f01cd0af"
+                    }
+                }
+            }
         }
-
+        
+      }
+        stage('maven deploy to nexus'){
+            steps{
+                dir('java-maven-sonar-argocd-helm-k8s/spring-boot-app') {
+                configFileProvider([configFile(fileId: '04d8d8e5-b9b8-4772-8503-86520e178763', variable: 'mavensettings')]) {
+                    sh "mvn -s $mavensettings clean deploy -DskipTests=true"
+                }
+            }
+        }}
+        
         stage('Build and Push Docker Image') {
           environment {
-            DOCKER_IMAGE = "abhishekf5/ultimate-cicd:${BUILD_NUMBER}"
+            DOCKER_IMAGE = "chaitanyachay/javaapp:${BUILD_NUMBER}"
             // DOCKERFILE_LOCATION = "java-maven-sonar-argocd-helm-k8s/spring-boot-app/Dockerfile"
-            REGISTRY_CREDENTIALS = credentials('docker-cred')
+            REGISTRY_CREDENTIALS = credentials('docker-hub-credentials')
           }
           steps {
             script {
                 sh 'cd java-maven-sonar-argocd-helm-k8s/spring-boot-app && docker build -t ${DOCKER_IMAGE} .'
                 def dockerImage = docker.image("${DOCKER_IMAGE}")
-                docker.withRegistry('https://index.docker.io/v1/', "docker-cred") {
+                docker.withRegistry('https://index.docker.io/v1/', "docker-hub-credentials") {
                     dockerImage.push()
                 }
             }
           }
         }
-
-
 
         stage('Update Deployment File') {
             environment {
