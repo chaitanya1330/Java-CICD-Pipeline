@@ -24,6 +24,27 @@
         <java.version>11</java.version>
     </properties>
 
+    <repositories>
+        <!-- Add your repository here -->
+        <repository>
+            <id>maven-releases</id>
+            <name>maven-releases</name>
+            <url>http://3.17.132.33:8081/repository/maven-releases/</url>
+        </repository>
+    </repositories>
+    <distributionManagement>
+        <repository>
+            <id>maven-releases</id>
+            <!-- CHANGE HERE by your team Nexus server -->
+            <url>http://3.17.132.33:8081/repository/maven-releases/</url>
+        </repository>
+        <snapshotRepository>
+            <id>maven-snapshots</id>
+            <!-- CHANGE HERE by your team Nexus server -->
+            <url>http://3.17.132.33:8081/repository/maven-releases/</url>
+        </snapshotRepository>
+    </distributionManagement>
+
     <dependencies>
 
         <dependency>
@@ -73,3 +94,4 @@
 
 
 </project>
+
